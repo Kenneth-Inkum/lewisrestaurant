@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "C:\\Users\\xanth\\.config\\herd\\bin\\php84\\php.exe",
+            "args": [
+                "C:\\Users\\xanth\\Livewire_3_screencasts\\lewisrestaurant\\artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}
