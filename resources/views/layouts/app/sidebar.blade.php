@@ -4,16 +4,48 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
+
+        {{-- Demo banner --}}
+        <div class="pointer-events-none fixed top-0 right-0 z-[200] size-28 overflow-hidden">
+            <div class="absolute -right-7 top-7 w-36 rotate-45 bg-gold-400 py-1.5 text-center text-xs font-bold tracking-[0.2em] text-zinc-950 shadow-lg">
+                DEMO
+            </div>
+        </div>
         <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.header>
-                <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
+                <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-2.5">
+                    <div class="flex size-7 items-center justify-center rounded-full border border-amber-400/40 bg-amber-400/10">
+                        <span class="font-serif text-xs font-semibold text-amber-400">L</span>
+                    </div>
+                    <span class="font-serif text-sm font-semibold text-zinc-800 dark:text-zinc-100">Lewis Restaurant</span>
+                </a>
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Platform')" class="grid">
-                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
+                <flux:sidebar.group :heading="__('Overview')" class="grid">
+                    <flux:sidebar.item icon="squares-2x2" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
+
+                <flux:sidebar.group :heading="__('Management')" class="grid">
+                    <flux:sidebar.item icon="clipboard-document-list" :href="route('admin.reservations')" :current="request()->routeIs('admin.reservations')" wire:navigate>
+                        {{ __('Reservations') }}
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="table-cells" :href="route('admin.tables')" :current="request()->routeIs('admin.tables')" wire:navigate>
+                        {{ __('Tables') }}
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="shopping-bag" :href="route('admin.orders')" :current="request()->routeIs('admin.orders')" wire:navigate>
+                        {{ __('Orders') }}
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
+
+                <flux:sidebar.group :heading="__('Content')" class="grid">
+                    <flux:sidebar.item icon="bookmark-square" :href="route('admin.menu')" :current="request()->routeIs('admin.menu')" wire:navigate>
+                        {{ __('Menu') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
@@ -21,12 +53,8 @@
             <flux:spacer />
 
             <flux:sidebar.nav>
-                <flux:sidebar.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    {{ __('Repository') }}
-                </flux:sidebar.item>
-
-                <flux:sidebar.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                    {{ __('Documentation') }}
+                <flux:sidebar.item icon="arrow-top-right-on-square" :href="route('home')" wire:navigate>
+                    {{ __('View Website') }}
                 </flux:sidebar.item>
             </flux:sidebar.nav>
 
@@ -79,7 +107,6 @@
                             type="submit"
                             icon="arrow-right-start-on-rectangle"
                             class="w-full cursor-pointer"
-                            data-test="logout-button"
                         >
                             {{ __('Log out') }}
                         </flux:menu.item>
