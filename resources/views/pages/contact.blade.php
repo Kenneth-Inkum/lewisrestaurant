@@ -12,11 +12,16 @@ new #[Layout('layouts::public')] #[Title('Contact')] class extends Component
 
 <div>
     {{-- Header --}}
-    <div class="bg-zinc-950 pb-16 pt-32">
-        <div class="mx-auto max-w-7xl px-6 text-center lg:px-8">
+    <div class="relative overflow-hidden pb-16 pt-32">
+        <img src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=1920&q=80"
+             alt="Washington DC"
+             class="absolute inset-0 h-full w-full object-cover" />
+        <div class="absolute inset-0 bg-zinc-950/85"></div>
+        <div class="absolute inset-0 bg-linear-to-b from-zinc-950/60 to-zinc-950"></div>
+        <div class="relative mx-auto max-w-7xl px-6 text-center lg:px-8">
             <p class="mb-3 text-xs font-semibold tracking-[0.3em] text-gold-400 uppercase">Get In Touch</p>
             <h1 class="font-serif text-5xl font-bold text-zinc-50 md:text-6xl">Contact Us</h1>
-            <p class="mx-auto mt-4 max-w-lg text-base text-zinc-400">
+            <p class="mx-auto mt-4 max-w-lg text-base text-zinc-300">
                 We'd love to hear from you. Reach out for reservations, private events, or any questions.
             </p>
         </div>

@@ -34,7 +34,7 @@ new #[Layout('layouts::public')] #[Title('Menu')] class extends Component
     </div>
 
     {{-- Category Navigation --}}
-    <div class="sticky top-[72px] z-40 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-md">
+    <div class="sticky top-[72px] z-40 bg-zinc-950/95 backdrop-blur-md">
         <div class="mx-auto max-w-7xl overflow-x-auto px-6 lg:px-8">
             <div class="flex gap-1 py-3">
                 @foreach($this->categories as $category)

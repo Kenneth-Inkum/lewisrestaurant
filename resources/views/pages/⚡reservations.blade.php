@@ -70,18 +70,18 @@ new #[Layout('layouts::public')] #[Title('Reservations')] class extends Componen
 <div>
 
     {{-- Header --}}
-    {{-- Hero Section --}}
-    <div class="bg-linear-to-br from-zinc-900 via-zinc-800 to-zinc-900 pb-16 pt-32">
-        <div class="mx-auto max-w-7xl px-6 text-center lg:px-8">
-            <flux:badge variant="outline" class="mb-4 text-gold-400 border-gold-400/30">
-                Dine With Us
-            </flux:badge>
-            <flux:heading size="4xl" class="text-zinc-50 font-serif mb-6">
-                Make a Reservation
-            </flux:heading>
-            <flux:text class="text-zinc-400 text-lg max-w-2xl mx-auto">
+    <div class="relative overflow-hidden pb-16 pt-32">
+        <img src="https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1920&q=80"
+             alt="Restaurant atmosphere"
+             class="absolute inset-0 h-full w-full object-cover" />
+        <div class="absolute inset-0 bg-zinc-950/85"></div>
+        <div class="absolute inset-0 bg-linear-to-b from-zinc-950/60 to-zinc-950"></div>
+        <div class="relative mx-auto max-w-7xl px-6 text-center lg:px-8">
+            <p class="mb-3 text-xs font-semibold tracking-[0.3em] text-gold-400 uppercase">Dine With Us</p>
+            <h1 class="font-serif text-5xl font-bold text-zinc-50 md:text-6xl">Make a Reservation</h1>
+            <p class="mx-auto mt-4 max-w-lg text-base text-zinc-300">
                 Reserve your table and let us take care of the rest. We look forward to hosting you for an unforgettable dining experience.
-            </flux:text>
+            </p>
         </div>
     </div>
 
@@ -93,38 +93,35 @@ new #[Layout('layouts::public')] #[Title('Reservations')] class extends Componen
                 <div class="lg:col-span-2">
                     @if($submitted)
                     {{-- Success State --}}
-                    <flux:container class="bg-linear-to-br from-green-600/10 to-emerald-600/10 border-green-600/20">
-                        <flux:container.inner class="p-12 text-center">
-                            <div class="mx-auto mb-8 flex size-20 items-center justify-center rounded-full bg-green-600/20 border border-green-600/30">
-                                <flux:icon name="check-circle" class="size-10 text-green-400" />
-                            </div>
-                            <flux:heading size="2xl" class="text-zinc-50 mb-4">Reservation Received!</flux:heading>
-                            <flux:text class="text-zinc-300 mb-6 text-lg">
-                                Thank you, <span class="text-zinc-100 font-semibold">{{ $name }}</span>. Your reservation request has been submitted successfully.
-                            </flux:text>
-                            <flux:text class="text-zinc-400 mb-8">
-                                We'll confirm your booking at <span class="text-zinc-200">{{ $email }}</span> within 2 hours.
-                            </flux:text>
-                            <flux:button 
-                                wire:click="resetForm" 
-                                variant="outline"
-                                icon="plus"
-                                class="border-zinc-600 text-zinc-300 hover:border-zinc-500 hover:text-zinc-200"
-                            >
-                                Make Another Reservation
-                            </flux:button>
-                        </flux:container.inner>
-                    </flux:container>
+                    <div class="rounded-2xl border border-green-600/20 bg-linear-to-br from-green-600/10 to-emerald-600/10 p-12 text-center">
+                        <div class="mx-auto mb-8 flex size-20 items-center justify-center rounded-full bg-green-600/20 border border-green-600/30">
+                            <flux:icon name="check-circle" class="size-10 text-green-400" />
+                        </div>
+                        <flux:heading size="2xl" class="text-zinc-50 mb-4">Reservation Received!</flux:heading>
+                        <flux:text class="text-zinc-300 mb-6 text-lg">
+                            Thank you, <span class="text-zinc-100 font-semibold">{{ $name }}</span>. Your reservation request has been submitted successfully.
+                        </flux:text>
+                        <flux:text class="text-zinc-400 mb-8">
+                            We'll confirm your booking at <span class="text-zinc-200">{{ $email }}</span> within 2 hours.
+                        </flux:text>
+                        <flux:button
+                            wire:click="resetForm"
+                            variant="outline"
+                            icon="plus"
+                            class="border-zinc-600 text-zinc-300 hover:border-zinc-500 hover:text-zinc-200"
+                        >
+                            Make Another Reservation
+                        </flux:button>
+                    </div>
                     @else
                     {{-- Form --}}
-                    <flux:container class="border-zinc-800">
-                        <flux:container.inner class="p-8">
-                            <flux:heading size="xl" class="text-zinc-100 mb-8">Reserve Your Table</flux:heading>
+                    <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
+                        <flux:heading size="xl" class="text-zinc-100 mb-8">Reserve Your Table</flux:heading>
 
                             <form wire:submit="submit" class="space-y-8">
                                 {{-- Guest Information --}}
                                 <flux:fieldset>
-                                    <flux:fieldset.legend>Guest Information</flux:fieldset.legend>
+                                    <flux:legend>Guest Information</flux:legend>
                                     
                                     <div class="grid gap-6 sm:grid-cols-2">
                                         <flux:field>
@@ -178,9 +175,9 @@ new #[Layout('layouts::public')] #[Title('Reservations')] class extends Componen
                                 
                                 {{-- Reservation Details --}}
                                 <flux:fieldset>
-                                    <flux:fieldset.legend>Reservation Details</flux:fieldset.legend>
+                                    <flux:legend>Reservation Details</flux:legend>
                                     
-                                    <div class="grid gap-6 sm:grid-cols-2">
+                                    <div class="grid gap-6 sm:grid-cols-2 mb-6">
                                         <flux:field>
                                             <flux:label>Date</flux:label>
                                             <flux:input 
@@ -233,93 +230,79 @@ new #[Layout('layouts::public')] #[Title('Reservations')] class extends Componen
                                     </span>
                                 </flux:button>
                             </form>
-                        </flux:container.inner>
-                    </flux:container>
+                    </div>
                     @endif
                 </div>
 
                 {{-- Info Panel --}}
                 <div class="space-y-8">
-                    {{-- Restaurant Image --}}
-                    <flux:container class="overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=800&q=80"
-                             alt="Restaurant atmosphere"
-                             class="h-64 w-full object-cover" />
-                    </flux:container>
-                    
                     {{-- Hours --}}
-                    <flux:container class="border-zinc-800">
-                        <flux:container.inner class="p-6">
-                            <div class="flex items-center gap-3 mb-4">
-                                <flux:icon name="clock" class="size-5 text-gold-400" />
-                                <flux:heading size="lg" class="text-zinc-100">Hours</flux:heading>
+                    <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
+                        <div class="flex items-center gap-3 mb-4">
+                            <flux:icon name="clock" class="size-5 text-gold-400" />
+                            <flux:heading size="lg" class="text-zinc-100">Hours</flux:heading>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <flux:text class="text-zinc-400">Monday – Thursday</flux:text>
+                                <flux:text class="text-zinc-300 font-medium">5:00 – 10:00 PM</flux:text>
                             </div>
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center">
-                                    <flux:text class="text-zinc-400">Monday – Thursday</flux:text>
-                                    <flux:text class="text-zinc-300 font-medium">5:00 – 10:00 PM</flux:text>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <flux:text class="text-zinc-400">Friday – Saturday</flux:text>
-                                    <flux:text class="text-zinc-300 font-medium">5:00 – 11:00 PM</flux:text>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <flux:text class="text-zinc-400">Sunday</flux:text>
-                                    <flux:text class="text-zinc-300 font-medium">4:00 – 9:00 PM</flux:text>
-                                </div>
+                            <div class="flex justify-between items-center">
+                                <flux:text class="text-zinc-400">Friday – Saturday</flux:text>
+                                <flux:text class="text-zinc-300 font-medium">5:00 – 11:00 PM</flux:text>
                             </div>
-                        </flux:container.inner>
-                    </flux:container>
+                            <div class="flex justify-between items-center">
+                                <flux:text class="text-zinc-400">Sunday</flux:text>
+                                <flux:text class="text-zinc-300 font-medium">4:00 – 9:00 PM</flux:text>
+                            </div>
+                        </div>
+                    </div>
 
                     {{-- Policies --}}
-                    <flux:container class="border-zinc-800">
-                        <flux:container.inner class="p-6">
-                            <div class="flex items-center gap-3 mb-4">
-                                <flux:icon name="clipboard-document-check" class="size-5 text-gold-400" />
-                                <flux:heading size="lg" class="text-zinc-100">Policies</flux:heading>
+                    <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
+                        <div class="flex items-center gap-3 mb-4">
+                            <flux:icon name="clipboard-document-check" class="size-5 text-gold-400" />
+                            <flux:heading size="lg" class="text-zinc-100">Policies</flux:heading>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex gap-3">
+                                <flux:icon name="check-circle" class="size-5 text-gold-400 mt-0.5 shrink-0" />
+                                <flux:text class="text-zinc-300 text-sm">Reservations held for 15 minutes past booking time</flux:text>
                             </div>
-                            <div class="space-y-4">
-                                <div class="flex gap-3">
-                                    <flux:icon name="check-circle" class="size-5 text-gold-400 mt-0.5 shrink-0" />
-                                    <flux:text class="text-zinc-300 text-sm">Reservations held for 15 minutes past booking time</flux:text>
-                                </div>
-                                <div class="flex gap-3">
-                                    <flux:icon name="check-circle" class="size-5 text-gold-400 mt-0.5 shrink-0" />
-                                    <flux:text class="text-zinc-300 text-sm">Please notify us of any dietary restrictions</flux:text>
-                                </div>
-                                <div class="flex gap-3">
-                                    <flux:icon name="check-circle" class="size-5 text-gold-400 mt-0.5 shrink-0" />
-                                    <flux:text class="text-zinc-300 text-sm">For parties of 8 or more, please call directly</flux:text>
-                                </div>
-                                <div class="flex gap-3">
-                                    <flux:icon name="check-circle" class="size-5 text-gold-400 mt-0.5 shrink-0" />
-                                    <flux:text class="text-zinc-300 text-sm">Cancellations accepted up to 24 hours in advance</flux:text>
-                                </div>
+                            <div class="flex gap-3">
+                                <flux:icon name="check-circle" class="size-5 text-gold-400 mt-0.5 shrink-0" />
+                                <flux:text class="text-zinc-300 text-sm">Please notify us of any dietary restrictions</flux:text>
                             </div>
-                        </flux:container.inner>
-                    </flux:container>
+                            <div class="flex gap-3">
+                                <flux:icon name="check-circle" class="size-5 text-gold-400 mt-0.5 shrink-0" />
+                                <flux:text class="text-zinc-300 text-sm">For parties of 8 or more, please call directly</flux:text>
+                            </div>
+                            <div class="flex gap-3">
+                                <flux:icon name="check-circle" class="size-5 text-gold-400 mt-0.5 shrink-0" />
+                                <flux:text class="text-zinc-300 text-sm">Cancellations accepted up to 24 hours in advance</flux:text>
+                            </div>
+                        </div>
+                    </div>
 
                     {{-- Private Events --}}
-                    <flux:container class="border-zinc-800">
-                        <flux:container.inner class="p-6">
-                            <div class="flex items-center gap-3 mb-4">
-                                <flux:icon name="calendar-days" class="size-5 text-gold-400" />
-                                <flux:heading size="lg" class="text-zinc-100">Private Events</flux:heading>
-                            </div>
-                            <flux:text class="text-zinc-300 mb-4">
-                                Planning a special occasion? Our private dining room accommodates up to 12 guests for an intimate, exclusive experience.
-                            </flux:text>
-                            <flux:button 
-                                href="{{ route('contact') }}" 
-                                wire:navigate
-                                variant="outline"
-                                icon="phone"
-                                class="border-gold-400/30 text-gold-400 hover:border-gold-400 hover:text-gold-300"
-                            >
-                                Inquire about private events
-                            </flux:button>
-                        </flux:container.inner>
-                    </flux:container>
+                    <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
+                        <div class="flex items-center gap-3 mb-4">
+                            <flux:icon name="calendar-days" class="size-5 text-gold-400" />
+                            <flux:heading size="lg" class="text-zinc-100">Private Events</flux:heading>
+                        </div>
+                        <flux:text class="text-zinc-300 mb-4">
+                            Planning a special occasion? Our private dining room accommodates up to 12 guests for an intimate, exclusive experience.
+                        </flux:text>
+                        <flux:button
+                            href="{{ route('contact') }}"
+                            wire:navigate
+                            variant="outline"
+                            icon="phone"
+                            class="border-gold-400/30 text-gold-400 hover:border-gold-400 hover:text-gold-300"
+                        >
+                            Inquire about private events
+                        </flux:button>
+                    </div>
                 </div>
 
             </div>
