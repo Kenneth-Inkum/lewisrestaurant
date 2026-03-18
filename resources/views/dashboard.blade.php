@@ -1,4 +1,4 @@
-<x-layouts::app :title="__('Dashboard')">
+<x-layouts::app.sidebar :title="__('Dashboard')">
     @php
         $todayReservations = \App\Models\Reservation::today()->count();
         $pendingReservations = \App\Models\Reservation::where('status', \App\Enums\ReservationStatus::Pending->value)->count();
@@ -188,4 +188,4 @@
             </a>
         </div>
     </flux:main>
-</x-layouts::app>
+</x-layouts::app.sidebar>

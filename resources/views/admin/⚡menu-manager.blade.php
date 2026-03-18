@@ -2,23 +2,25 @@
 
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Illuminate\Support\Str;
 
 new #[Title('Menu Manager')] class extends Component
 {
+    use WithPagination;
+
     public string $search = '';
     public ?int $filterCategoryId = null;
 
     // Category form
-    public bool $showCategoryModal = false;
     public ?int $editingCategoryId = null;
     public string $categoryName = '';
     public string $categoryDescription = '';
 
     // Item form
-    public bool $showItemModal = false;
     public ?int $editingItemId = null;
     public int $itemCategoryId = 0;
     public string $itemName = '';
@@ -30,19 +32,40 @@ new #[Title('Menu Manager')] class extends Component
 
     public array $allDietaryTags = ['gluten-free', 'vegetarian', 'vegan', 'dairy-free', 'nut-free', 'spicy'];
 
+    // Validation rules
+    protected array $rules = [
+        'categoryName' => 'required|string|min:2|max:100',
+        'itemCategoryId' => 'required|integer|min:1|exists:menu_categories,id',
+        'itemName' => 'required|string|min:2|max:150',
+        'itemPrice' => 'required|numeric|min:0',
+    ];
+
+    #[Computed]
     public function categories(): mixed
     {
-        return MenuCategory::active()->withCount('items')->get();
+        return MenuCategory::active()->withCount('items')->orderBy('sort_order')->get();
     }
 
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterCategoryId(): void
+    {
+        $this->resetPage();
+    }
+
+    #[Computed]
     public function items(): mixed
     {
         return MenuItem::with('category')
-            ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%"))
+            ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%")
+                ->orWhere('description', 'like', "%{$this->search}%"))
             ->when($this->filterCategoryId, fn ($q) => $q->where('menu_category_id', $this->filterCategoryId))
             ->orderBy('menu_category_id')
             ->orderBy('sort_order')
-            ->get();
+            ->paginate(15);
     }
 
     public function openCategoryModal(?int $categoryId = null): void
@@ -55,15 +78,11 @@ new #[Title('Menu Manager')] class extends Component
             $this->categoryName = $category->name;
             $this->categoryDescription = $category->description ?? '';
         }
-
-        $this->showCategoryModal = true;
     }
 
     public function saveCategory(): void
     {
-        $this->validate([
-            'categoryName' => ['required', 'string', 'min:2', 'max:100'],
-        ]);
+        $this->validate(['categoryName' => $this->rules['categoryName']]);
 
         $data = [
             'name' => $this->categoryName,
@@ -72,19 +91,36 @@ new #[Title('Menu Manager')] class extends Component
             'is_active' => true,
         ];
 
-        if ($this->editingCategoryId) {
-            MenuCategory::findOrFail($this->editingCategoryId)->update($data);
-        } else {
-            MenuCategory::create($data);
-        }
+        try {
+            if ($this->editingCategoryId) {
+                MenuCategory::findOrFail($this->editingCategoryId)->update($data);
+                $this->dispatch('category-updated', id: $this->editingCategoryId);
+            } else {
+                MenuCategory::create($data);
+                $this->dispatch('category-created');
+            }
 
-        $this->showCategoryModal = false;
-        $this->resetCategoryForm();
+            $this->resetCategoryForm();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to save category: ' . $e->getMessage());
+        }
     }
 
     public function deleteCategory(int $categoryId): void
     {
-        MenuCategory::findOrFail($categoryId)->delete();
+        try {
+            $category = MenuCategory::findOrFail($categoryId);
+            
+            if ($category->items()->exists()) {
+                session()->flash('error', 'Cannot delete category that contains menu items.');
+                return;
+            }
+            
+            $category->delete();
+            $this->dispatch('category-deleted', id: $categoryId);
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to delete category: ' . $e->getMessage());
+        }
     }
 
     public function openItemModal(?int $itemId = null): void
@@ -102,16 +138,14 @@ new #[Title('Menu Manager')] class extends Component
             $this->itemIsFeatured = $item->is_featured;
             $this->itemDietaryTags = $item->dietary_tags ?? [];
         }
-
-        $this->showItemModal = true;
     }
 
     public function saveItem(): void
     {
         $this->validate([
-            'itemCategoryId' => ['required', 'integer', 'min:1', 'exists:menu_categories,id'],
-            'itemName' => ['required', 'string', 'min:2', 'max:150'],
-            'itemPrice' => ['required', 'numeric', 'min:0'],
+            'itemCategoryId' => $this->rules['itemCategoryId'],
+            'itemName' => $this->rules['itemName'],
+            'itemPrice' => $this->rules['itemPrice'],
         ]);
 
         $data = [
@@ -125,25 +159,40 @@ new #[Title('Menu Manager')] class extends Component
             'dietary_tags' => $this->itemDietaryTags ?: null,
         ];
 
-        if ($this->editingItemId) {
-            MenuItem::findOrFail($this->editingItemId)->update($data);
-        } else {
-            MenuItem::create($data);
-        }
+        try {
+            if ($this->editingItemId) {
+                MenuItem::findOrFail($this->editingItemId)->update($data);
+                $this->dispatch('item-updated', id: $this->editingItemId);
+            } else {
+                MenuItem::create($data);
+                $this->dispatch('item-created');
+            }
 
-        $this->showItemModal = false;
-        $this->resetItemForm();
+            $this->resetItemForm();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to save item: ' . $e->getMessage());
+        }
     }
 
     public function toggleAvailability(int $itemId): void
     {
-        $item = MenuItem::findOrFail($itemId);
-        $item->update(['is_available' => ! $item->is_available]);
+        try {
+            $item = MenuItem::findOrFail($itemId);
+            $item->update(['is_available' => ! $item->is_available]);
+            $this->dispatch('item-availability-toggled', id: $itemId, available: $item->is_available);
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to update availability: ' . $e->getMessage());
+        }
     }
 
     public function deleteItem(int $itemId): void
     {
-        MenuItem::findOrFail($itemId)->delete();
+        try {
+            MenuItem::findOrFail($itemId)->delete();
+            $this->dispatch('item-deleted', id: $itemId);
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to delete item: ' . $e->getMessage());
+        }
     }
 
     private function resetCategoryForm(): void
@@ -170,109 +219,142 @@ new #[Title('Menu Manager')] class extends Component
 <div>
     <flux:main class="space-y-6">
 
+        {{-- Toast Notifications --}}
+        @if(session()->has('error'))
+            <flux:toast variant="danger" icon="exclamation-triangle" dismissible>
+                {{ session('error') }}
+            </flux:toast>
+        @endif
+
         {{-- Header --}}
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <flux:heading size="xl">Menu Manager</flux:heading>
-                <flux:text class="mt-1">Manage categories and menu items</flux:text>
+        <flux:card>
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-6">
+                <div>
+                    <flux:heading size="xl">Menu Manager</flux:heading>
+                    <flux:text class="mt-1">Manage categories and menu items</flux:text>
+                </div>
+                <flux:button.group>
+                    <flux:modal.trigger name="category-modal">
+                        <flux:button variant="outline" icon="plus">
+                            Add Category
+                        </flux:button>
+                    </flux:modal.trigger>
+                    <flux:modal.trigger name="item-modal">
+                        <flux:button variant="primary" icon="plus">
+                            Add Item
+                        </flux:button>
+                    </flux:modal.trigger>
+                </flux:button.group>
             </div>
-            <div class="flex gap-2">
-                <flux:button wire:click="openCategoryModal" variant="outline" icon="plus">
-                    Add Category
-                </flux:button>
-                <flux:button wire:click="openItemModal" variant="primary" icon="plus">
-                    Add Item
-                </flux:button>
-            </div>
-        </div>
+        </flux:card>
 
         {{-- Filters --}}
-        <div class="flex flex-col gap-3 sm:flex-row">
-            <flux:input wire:model.live.debounce="search" placeholder="Search items..." icon="magnifying-glass" class="sm:max-w-xs" />
-            <flux:select wire:model.live="filterCategoryId" class="sm:max-w-xs">
-                <option value="">All Categories</option>
-                @foreach($this->categories() as $category)
-                <option value="{{ $category->id }}">{{ $category->name }}</option>
-                @endforeach
-            </flux:select>
-        </div>
+        <flux:card>
+            <div class="p-4">
+                <flux:heading size="md" class="mb-3">Filters</flux:heading>
+                <div class="flex flex-col gap-3 sm:flex-row">
+                    <flux:input wire:model.live.debounce="search" placeholder="Search items..." icon="magnifying-glass" clearable class="sm:max-w-xs" />
+                    <flux:select wire:model.live="filterCategoryId" variant="listbox" placeholder="All Categories" class="sm:max-w-xs">
+                        @foreach($this->categories() as $category)
+                        <flux:select.option value="{{ $category->id }}">{{ $category->name }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </div>
+            </div>
+        </flux:card>
 
         {{-- Categories Summary --}}
-        <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            @foreach($this->categories() as $category)
-            <div class="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900" wire:key="cat-{{ $category->id }}">
-                <div>
-                    <p class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $category->name }}</p>
-                    <p class="text-xs text-zinc-500">{{ $category->items_count }} items</p>
-                </div>
-                <div class="flex gap-1">
-                    <flux:button wire:click="openCategoryModal({{ $category->id }})" variant="ghost" size="sm" icon="pencil" />
-                    <flux:button wire:click="deleteCategory({{ $category->id }})" wire:confirm="Delete this category?" variant="ghost" size="sm" icon="trash" class="text-red-500 hover:text-red-600" />
+        <flux:card>
+            <flux:heading size="lg" class="px-5 py-4 border-b border-zinc-100 dark:border-zinc-800">Categories ({{ $this->categories()->count() }})</flux:heading>
+            
+            <div class="p-5">
+                <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    @foreach($this->categories() as $category)
+                    <flux:card class="bg-zinc-50 dark:bg-zinc-800/50" wire:key="cat-{{ $category->id }}">
+                        <div class="flex items-center justify-between p-4">
+                            <div>
+                                <flux:heading size="sm">{{ $category->name }}</flux:heading>
+                                <flux:text size="xs" class="text-zinc-500">{{ $category->items_count }} items</flux:text>
+                            </div>
+                            <flux:button.group>
+                                <flux:modal.trigger name="category-modal">
+                                    <flux:button wire:click="openCategoryModal({{ $category->id }})" variant="ghost" size="sm" icon="pencil" />
+                                </flux:modal.trigger>
+                                <flux:button wire:click="deleteCategory({{ $category->id }})" wire:confirm="Delete this category and all its items?" variant="ghost" size="sm" icon="trash" class="text-red-500" />
+                            </flux:button.group>
+                        </div>
+                    </flux:card>
+                    @endforeach
                 </div>
             </div>
-            @endforeach
-        </div>
+        </flux:card>
 
         {{-- Items Table --}}
-        <div class="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-            <div class="border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
-                <flux:heading size="lg">Menu Items ({{ $this->items()->count() }})</flux:heading>
-            </div>
+        <flux:card>
+            <flux:heading size="lg" class="px-5 py-4 border-b border-zinc-100 dark:border-zinc-800">Menu Items ({{ $this->items->total() }})</flux:heading>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-zinc-100 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-800/50">
-                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Item</th>
-                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Category</th>
-                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Price</th>
-                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
-                            <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                        @forelse($this->items() as $item)
-                        <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/50" wire:key="item-{{ $item->id }}">
-                            <td class="px-5 py-3.5">
-                                <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $item->name }}</p>
-                                <p class="text-xs text-zinc-500 line-clamp-1">{{ $item->description }}</p>
-                                @if($item->is_featured)
-                                <span class="mt-1 inline-block rounded-full bg-amber-100 px-1.5 py-0.5 text-xs text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Featured</span>
-                                @endif
-                            </td>
-                            <td class="px-5 py-3.5 text-zinc-600 dark:text-zinc-400">{{ $item->category->name }}</td>
-                            <td class="px-5 py-3.5 font-medium text-zinc-900 dark:text-zinc-100">${{ number_format($item->price, 2) }}</td>
-                            <td class="px-5 py-3.5">
-                                <button wire:click="toggleAvailability({{ $item->id }})"
-                                        class="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors
-                                        {{ $item->is_available ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400' }}">
-                                    <span class="size-1.5 rounded-full {{ $item->is_available ? 'bg-green-500' : 'bg-zinc-400' }}"></span>
-                                    {{ $item->is_available ? 'Available' : 'Unavailable' }}
-                                </button>
-                            </td>
-                            <td class="px-5 py-3.5">
-                                <div class="flex justify-end gap-1">
+            <div class="p-5">
+                <flux:table :paginate="$this->items">
+                <flux:table.columns>
+                    <flux:table.column>Item</flux:table.column>
+                    <flux:table.column>Category</flux:table.column>
+                    <flux:table.column>Price</flux:table.column>
+                    <flux:table.column>Featured</flux:table.column>
+                    <flux:table.column>Status</flux:table.column>
+                    <flux:table.column></flux:table.column>
+                </flux:table.columns>
+
+                <flux:table.rows>
+                    @forelse($this->items as $item)
+                    <flux:table.row wire:key="item-{{ $item->id }}">
+                        <flux:table.cell>
+                            <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $item->name }}</p>
+                            <p class="text-xs text-zinc-500 line-clamp-1">{{ $item->description }}</p>
+                        </flux:table.cell>
+                        <flux:table.cell>{{ $item->category->name }}</flux:table.cell>
+                        <flux:table.cell variant="strong">${{ number_format($item->price, 2) }}</flux:table.cell>
+                        <flux:table.cell>
+                            @if($item->is_featured)
+                            <flux:badge color="amber" size="sm">Featured</flux:badge>
+                            @else
+                            <span class="text-zinc-400 text-xs">—</span>
+                            @endif
+                        </flux:table.cell>
+                        <flux:table.cell>
+                            <flux:badge 
+                                wire:click="toggleAvailability({{ $item->id }})"
+                                color="{{ $item->is_available ? 'green' : 'zinc' }}"
+                                variant="{{ $item->is_available ? 'solid' : 'outline' }}"
+                                class="cursor-pointer hover:opacity-80 transition-opacity"
+                            >
+                                {{ $item->is_available ? 'Available' : 'Unavailable' }}
+                            </flux:badge>
+                        </flux:table.cell>
+                        <flux:table.cell>
+                            <div class="flex justify-end gap-1">
+                                <flux:modal.trigger name="item-modal">
                                     <flux:button wire:click="openItemModal({{ $item->id }})" variant="ghost" size="sm" icon="pencil" />
-                                    <flux:button wire:click="deleteItem({{ $item->id }})" wire:confirm="Delete this item?" variant="ghost" size="sm" icon="trash" class="text-red-500 hover:text-red-600" />
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="5" class="px-5 py-12 text-center text-sm text-zinc-500">
-                                No items found.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                                </flux:modal.trigger>
+                                <flux:button wire:click="deleteItem({{ $item->id }})" wire:confirm="Delete this item?" variant="ghost" size="sm" icon="trash" class="text-red-500 hover:text-red-600" />
+                            </div>
+                        </flux:table.cell>
+                    </flux:table.row>
+                    @empty
+                    <flux:table.row>
+                        <flux:table.cell colspan="6" class="py-12 text-center text-sm text-zinc-500">
+                            No items found.
+                        </flux:table.cell>
+                    </flux:table.row>
+                    @endforelse
+                </flux:table.rows>
+            </flux:table>
             </div>
-        </div>
+        </flux:card>
 
     </flux:main>
 
     {{-- Category Modal --}}
-    <flux:modal wire:model="showCategoryModal" class="md:max-w-md">
+    <flux:modal name="category-modal" class="md:max-w-md">
         <div class="space-y-5">
             <flux:heading size="lg">{{ $editingCategoryId ? 'Edit Category' : 'New Category' }}</flux:heading>
 
@@ -288,7 +370,7 @@ new #[Title('Menu Manager')] class extends Component
             </flux:field>
 
             <div class="flex justify-end gap-2 pt-2">
-                <flux:button wire:click="$set('showCategoryModal', false)" variant="ghost">Cancel</flux:button>
+                <flux:button close variant="ghost">Cancel</flux:button>
                 <flux:button wire:click="saveCategory" variant="primary">
                     {{ $editingCategoryId ? 'Update' : 'Create' }} Category
                 </flux:button>
@@ -297,16 +379,15 @@ new #[Title('Menu Manager')] class extends Component
     </flux:modal>
 
     {{-- Item Modal --}}
-    <flux:modal wire:model="showItemModal" class="md:max-w-lg">
+    <flux:modal name="item-modal" class="md:max-w-lg">
         <div class="space-y-5">
             <flux:heading size="lg">{{ $editingItemId ? 'Edit Item' : 'New Menu Item' }}</flux:heading>
 
             <flux:field>
                 <flux:label>Category</flux:label>
-                <flux:select wire:model="itemCategoryId">
-                    <option value="0">Select a category...</option>
+                <flux:select wire:model="itemCategoryId" variant="listbox" placeholder="Select a category...">
                     @foreach($this->categories() as $category)
-                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                    <flux:select.option value="{{ $category->id }}">{{ $category->name }}</flux:select.option>
                     @endforeach
                 </flux:select>
                 <flux:error name="itemCategoryId" />
@@ -329,11 +410,12 @@ new #[Title('Menu Manager')] class extends Component
                     <flux:label>Dietary Tags</flux:label>
                     <div class="flex flex-wrap gap-2 pt-1">
                         @foreach($allDietaryTags as $tag)
-                        <label class="flex cursor-pointer items-center gap-1.5">
-                            <input type="checkbox" wire:model="itemDietaryTags" value="{{ $tag }}"
-                                   class="rounded border-zinc-300 text-zinc-900 dark:border-zinc-600" />
-                            <span class="text-xs text-zinc-600 dark:text-zinc-400">{{ $tag }}</span>
-                        </label>
+                        <flux:checkbox 
+                            wire:model="itemDietaryTags" 
+                            value="{{ $tag }}"
+                            label="{{ $tag }}"
+                            class="text-xs"
+                        />
                         @endforeach
                     </div>
                 </flux:field>
@@ -344,13 +426,17 @@ new #[Title('Menu Manager')] class extends Component
                 <flux:textarea wire:model="itemDescription" rows="2" placeholder="Describe the dish..." />
             </flux:field>
 
-            <div class="flex gap-6">
-                <flux:switch wire:model="itemIsAvailable" label="Available" />
-                <flux:switch wire:model="itemIsFeatured" label="Featured on homepage" />
+            <div class="space-y-4">
+                <flux:field>
+                    <flux:switch wire:model="itemIsAvailable" label="Available" description="Show this item on the menu" />
+                </flux:field>
+                <flux:field>
+                    <flux:switch wire:model="itemIsFeatured" label="Featured" description="Show this item on the homepage" />
+                </flux:field>
             </div>
 
             <div class="flex justify-end gap-2 pt-2">
-                <flux:button wire:click="$set('showItemModal', false)" variant="ghost">Cancel</flux:button>
+                <flux:button close variant="ghost">Cancel</flux:button>
                 <flux:button wire:click="saveItem" variant="primary">
                     {{ $editingItemId ? 'Update' : 'Add' }} Item
                 </flux:button>
@@ -358,4 +444,5 @@ new #[Title('Menu Manager')] class extends Component
         </div>
     </flux:modal>
 
+    </flux:main>
 </div>

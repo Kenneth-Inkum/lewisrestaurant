@@ -160,9 +160,9 @@ new #[Title('Tables')] class extends Component
                     </div>
                     <p class="mb-2 text-xs text-zinc-500">{{ $table->capacity }} seats</p>
                     <flux:select wire:change="updateStatus({{ $table->id }}, $event.target.value)"
-                                 class="text-xs !py-1 !px-2 w-full">
+                                 variant="listbox" class="text-xs w-full">
                         @foreach($this->statuses() as $s)
-                        <option value="{{ $s->value }}" @selected($table->status === $s)>{{ $s->label() }}</option>
+                        <flux:select.option value="{{ $s->value }}" :selected="$table->status === $s">{{ $s->label() }}</flux:select.option>
                         @endforeach
                     </flux:select>
                 </div>
@@ -198,19 +198,19 @@ new #[Title('Tables')] class extends Component
 
                 <flux:field>
                     <flux:label>Section</flux:label>
-                    <flux:select wire:model="section">
-                        <option value="main">Main Dining</option>
-                        <option value="patio">Patio</option>
-                        <option value="bar">Bar</option>
-                        <option value="private">Private</option>
+                    <flux:select wire:model="section" variant="listbox">
+                        <flux:select.option value="main">Main Dining</flux:select.option>
+                        <flux:select.option value="patio">Patio</flux:select.option>
+                        <flux:select.option value="bar">Bar</flux:select.option>
+                        <flux:select.option value="private">Private</flux:select.option>
                     </flux:select>
                 </flux:field>
 
                 <flux:field>
                     <flux:label>Status</flux:label>
-                    <flux:select wire:model="status">
+                    <flux:select wire:model="status" variant="listbox">
                         @foreach($this->statuses() as $s)
-                        <option value="{{ $s->value }}">{{ $s->label() }}</option>
+                        <flux:select.option value="{{ $s->value }}">{{ $s->label() }}</flux:select.option>
                         @endforeach
                     </flux:select>
                 </flux:field>

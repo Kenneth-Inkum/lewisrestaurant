@@ -5,11 +5,14 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\RestaurantTable;
 use App\Enums\OrderStatus;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 new #[Title('Orders')] class extends Component
 {
+    use WithPagination;
     public string $filterStatus = '';
 
     // New order form
@@ -24,6 +27,12 @@ new #[Title('Orders')] class extends Component
     public int $addQuantity = 1;
     public string $addItemNotes = '';
 
+    public function updatedFilterStatus(): void
+    {
+        $this->resetPage();
+    }
+
+    #[Computed]
     public function orders(): mixed
     {
         return Order::with(['table', 'items'])
@@ -36,7 +45,7 @@ new #[Title('Orders')] class extends Component
                 WHEN 'delivered' THEN 4
                 ELSE 5 END")
             ->latest()
-            ->get();
+            ->paginate(12);
     }
 
     public function openOrderModal(?int $orderId = null): void
@@ -210,13 +219,13 @@ new #[Title('Orders')] class extends Component
         </div>
 
         {{-- Orders Grid --}}
-        @if($this->orders()->isEmpty())
+        @if($this->orders->isEmpty())
         <div class="rounded-xl border border-zinc-200 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
             <flux:text class="text-zinc-400">No orders found.</flux:text>
         </div>
         @else
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach($this->orders() as $order)
+            @foreach($this->orders as $order)
             @php
                 $borderColor = match($order->status) {
                     \App\Enums\OrderStatus::Pending => 'border-yellow-200 dark:border-yellow-800/40',
@@ -255,15 +264,18 @@ new #[Title('Orders')] class extends Component
                     </div>
                 </div>
 
-                <flux:select wire:change="updateStatus({{ $order->id }}, $event.target.value)" class="w-full text-xs">
+                <flux:select wire:change="updateStatus({{ $order->id }}, $event.target.value)" variant="listbox" class="w-full text-xs">
                     @foreach($this->statuses() as $s)
-                    <option value="{{ $s->value }}" @selected($order->status === $s)>{{ $s->label() }}</option>
+                    <flux:select.option value="{{ $s->value }}" :selected="$order->status === $s">{{ $s->label() }}</flux:select.option>
                     @endforeach
                 </flux:select>
             </div>
             @endforeach
         </div>
         @endif
+        <div class="mt-6">
+            {{ $this->orders->links() }}
+        </div>
 
     </flux:main>
 
@@ -275,10 +287,9 @@ new #[Title('Orders')] class extends Component
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:field>
                     <flux:label>Table</flux:label>
-                    <flux:select wire:model="selectedTableId">
-                        <option value="0">Select a table...</option>
+                    <flux:select wire:model="selectedTableId" variant="listbox" placeholder="Select a table...">
                         @foreach($this->tables() as $table)
-                        <option value="{{ $table->id }}">{{ $table->display_name }} ({{ $table->capacity }} seats)</option>
+                        <flux:select.option value="{{ $table->id }}">{{ $table->display_name }} ({{ $table->capacity }} seats)</flux:select.option>
                         @endforeach
                     </flux:select>
                     <flux:error name="selectedTableId" />
@@ -294,14 +305,11 @@ new #[Title('Orders')] class extends Component
             <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
                 <p class="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Add Items</p>
                 <div class="flex gap-2">
-                    <flux:select wire:model="addItemId" class="flex-1">
-                        <option value="0">Select menu item...</option>
+                    <flux:select wire:model="addItemId" variant="listbox" placeholder="Select menu item..." class="flex-1">
                         @foreach($this->menuItems()->groupBy(fn ($i) => $i->category->name) as $catName => $items)
-                        <optgroup label="{{ $catName }}">
                             @foreach($items as $item)
-                            <option value="{{ $item->id }}">{{ $item->name }} — ${{ number_format($item->price, 2) }}</option>
+                            <flux:select.option value="{{ $item->id }}">{{ $catName }}: {{ $item->name }} — ${{ number_format($item->price, 2) }}</flux:select.option>
                             @endforeach
-                        </optgroup>
                         @endforeach
                     </flux:select>
                     <flux:input wire:model="addQuantity" type="number" min="1" class="w-16" />
