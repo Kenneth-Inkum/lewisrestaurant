@@ -206,54 +206,50 @@ new #[Title('Reservations')] class extends Component {
 ?>
 
 <div>
-        {{-- Header with Stats --}}
-        <div class="bg-linear-to-r from-blue-600 to-purple-600 text-white py-8">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                    <flux:heading size="2xl" class="text-white">Reservations</flux:heading>
-                    <flux:text class="text-blue-100 mt-2">Manage guest bookings and restaurant capacity</flux:text>
-                </div>
-                <div class="flex flex-col gap-3 sm:flex-row">
-                    <flux:button wire:click="openModal" variant="primary" icon="plus"
-                        class="bg-white text-blue-600 hover:bg-blue-50">
-                        New Reservation
-                    </flux:button>
-                </div>
-            </div>
+    <flux:main class="space-y-6">
 
-            {{-- Quick Stats --}}
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-                <flux:card class="bg-white/10 backdrop-blur border-white/20">
-                    <div class="p-4 text-center">
-                        <flux:heading size="lg" class="text-white">{{ $this->getTodayCount() }}</flux:heading>
-                        <flux:text class="text-blue-100 text-sm">Today</flux:text>
-                    </div>
-                </flux:card>
-                <flux:card class="bg-white/10 backdrop-blur border-white/20">
-                    <div class="p-4 text-center">
-                        <flux:heading size="lg" class="text-white">{{ $this->getPendingCount() }}</flux:heading>
-                        <flux:text class="text-blue-100 text-sm">Pending</flux:text>
-                    </div>
-                </flux:card>
-                <flux:card class="bg-white/10 backdrop-blur border-white/20">
-                    <div class="p-4 text-center">
-                        <flux:heading size="lg" class="text-white">{{ $this->getConfirmedCount() }}</flux:heading>
-                        <flux:text class="text-blue-100 text-sm">Confirmed</flux:text>
-                    </div>
-                </flux:card>
-                <flux:card class="bg-white/10 backdrop-blur border-white/20">
-                    <div class="p-4 text-center">
-                        <flux:heading size="lg" class="text-white">{{ $this->getTotalGuestsToday() }}
-                        </flux:heading>
-                        <flux:text class="text-blue-100 text-sm">Guests Today</flux:text>
-                    </div>
-                </flux:card>
+        {{-- Header --}}
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <flux:heading size="xl">Reservations</flux:heading>
+                <flux:text class="mt-1">Manage guest bookings and restaurant capacity</flux:text>
             </div>
-        </flux:container>
+            <flux:button wire:click="openModal" variant="primary" icon="plus">
+                New Reservation
+            </flux:button>
+        </div>
+
+        {{-- Quick Stats --}}
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <flux:card>
+                <div class="p-4 text-center">
+                    <flux:heading size="lg">{{ $this->getTodayCount() }}</flux:heading>
+                    <flux:text class="text-sm">Today</flux:text>
+                </div>
+            </flux:card>
+            <flux:card>
+                <div class="p-4 text-center">
+                    <flux:heading size="lg">{{ $this->getPendingCount() }}</flux:heading>
+                    <flux:text class="text-sm">Pending</flux:text>
+                </div>
+            </flux:card>
+            <flux:card>
+                <div class="p-4 text-center">
+                    <flux:heading size="lg">{{ $this->getConfirmedCount() }}</flux:heading>
+                    <flux:text class="text-sm">Confirmed</flux:text>
+                </div>
+            </flux:card>
+            <flux:card>
+                <div class="p-4 text-center">
+                    <flux:heading size="lg">{{ $this->getTotalGuestsToday() }}</flux:heading>
+                    <flux:text class="text-sm">Guests Today</flux:text>
+                </div>
+            </flux:card>
+        </div>
 
         {{-- Advanced Filters --}}
-        <flux:container class="p-6">
-            <flux:heading size="lg" class="mb-4">Filters</flux:heading>
+        <flux:card class="p-6">
+            <flux:heading size="lg" class="mb-4">Filter Reservations</flux:heading>
 
             <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <flux:field>
@@ -299,10 +295,10 @@ new #[Title('Reservations')] class extends Component {
                     </flux:button>
                 </div>
             @endif
-        </flux:container>
+        </flux:card>
 
         {{-- Reservations Table --}}
-        <flux:container class="p-6">
+        <flux:card class="p-6">
             <div class="flex items-center justify-between mb-6">
                 <flux:heading size="lg">Reservations</flux:heading>
                 <flux:text class="text-sm text-zinc-500">
@@ -311,13 +307,13 @@ new #[Title('Reservations')] class extends Component {
             </div>
 
             <flux:table :paginate="$this->reservations">
-                    <flux:table.columns>
-                        <flux:table.column>Guest Details</flux:table.column>
-                        <flux:table.column>Reservation</flux:table.column>
-                        <flux:table.column>Party</flux:table.column>
-                        <flux:table.column>Status</flux:table.column>
-                        <flux:table.column>Actions</flux:table.column>
-                    </flux:table.columns>
+                <flux:table.columns>
+                    <flux:table.column>Guest Details</flux:table.column>
+                    <flux:table.column>Reservation</flux:table.column>
+                    <flux:table.column>Party</flux:table.column>
+                    <flux:table.column>Status</flux:table.column>
+                    <flux:table.column>Actions</flux:table.column>
+                </flux:table.columns>
 
                 <flux:table.rows>
                     @forelse($this->reservations as $reservation)
@@ -376,19 +372,19 @@ new #[Title('Reservations')] class extends Component {
 
                             <flux:table.cell>
                                 <flux:dropdown>
-                                        <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" />
+                                    <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" />
 
                                     <flux:menu align="end">
-                                        <flux:dropdown.item wire:click="openModal({{ $reservation->id }})"
+                                        <flux:menu.item wire:click="openModal({{ $reservation->id }})"
                                             icon="pencil">
                                             Edit Reservation
-                                        </flux:dropdown.item>
+                                        </flux:menu.item>
 
-                                        <flux:dropdown.item wire:click="delete({{ $reservation->id }})" icon="trash"
+                                        <flux:menu.item wire:click="delete({{ $reservation->id }})" icon="trash"
                                             variant="danger"
                                             wire:confirm="Are you sure you want to delete this reservation?">
                                             Delete Reservation
-                                        </flux:dropdown.item>
+                                        </flux:menu.item>
                                     </flux:menu>
                                 </flux:dropdown>
                             </flux:table.cell>
@@ -413,8 +409,10 @@ new #[Title('Reservations')] class extends Component {
                     @endforelse
                 </flux:table.rows>
             </flux:table>
-        <div>
-
+            <div class="px-6 py-4 border-t">
+                {{ $this->reservations->links() }}
+            </div>
+        </flux:card>
 
     {{-- Reservation Modal --}}
     <flux:modal wire:model="showModal" class="md:max-w-2xl">
